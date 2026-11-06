@@ -1,6 +1,8 @@
 # Gai
 这是我的个人作品仓库，欢迎享用～
 
+GitHub：[https://github.com/GAI810/Gai](https://github.com/GAI810/Gai) · 邮箱：[zhiyigai2@gmail.com](mailto:zhiyigai2@gmail.com)（盖之怿）
+
 ## 戴森球运作监控
 
 2025 年 11 月前后，Gemini 新模型刚出来，外面在聊它写前端行不行。我用**同一段提示词**，让同期几家模型各做一版「戴森球运作监控」；比下来，Gemini 那版的整体前端完成度，在当时算第一梯队。
