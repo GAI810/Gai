@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>产品示例 — 戴森球运作监控 · 浅色 Bento 软版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" />
+<style>
+:root{
+  --bg:#D5CEF0;
+  --bg-2:#E4DFF5;
+  --ink:#14161C;
+  --mute:#3A4050;
+  --card:#FFFFFF;
+  --line:rgba(28,31,38,.08);
+  --pink:#F0C8D4;
+  --mint:#BFE5D6;
+  --lav:#D4CCF0;
+  --pink-ink:#8B3D52;
+  --mint-ink:#2A6B56;
+  --lav-ink:#4F3F8A;
+  --accent:#4F3F8A;
+  --radius:24px;
+  --radius-sm:18px;
+  --soft-shadow:0 14px 36px -20px rgba(28,31,38,.30);
+  --font:"Plus Jakarta Sans","Noto Sans SC",system-ui,sans-serif;
+  --base:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font);
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  font-size:var(--base);
+}
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 55% 45% at 8% 0%, rgba(244,200,214,.72), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 96% 6%, rgba(180,220,210,.55), transparent 50%),
+    radial-gradient(ellipse 48% 48% at 72% 92%, rgba(180,170,230,.52), transparent 55%),
+    var(--bg);
+}
+a{color:inherit;text-decoration:none}
+img,video{display:block;max-width:100%;height:auto}
+.wrap{width:min(100% - 2.25rem, 1120px);margin-inline:auto}
+
+.draft-banner{
+  position:fixed;left:16px;bottom:16px;z-index:80;
+  font-size:12px;font-weight:700;letter-spacing:.2px;
+  color:var(--pink-ink);
+  background:rgba(255,255,255,.88);
+  border:1px solid rgba(139,61,82,.18);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  padding:7px 12px;border-radius:999px;
+  box-shadow:var(--soft-shadow);
+  pointer-events:none;
+}
+
+.nav{
+  position:sticky;top:0;z-index:40;
+  backdrop-filter:blur(16px) saturate(1.15);
+  -webkit-backdrop-filter:blur(16px) saturate(1.15);
+  background:rgba(213,206,240,.86);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:62px;gap:1rem}
+.brand{font-weight:700;font-size:15px;letter-spacing:-.2px;display:inline-flex;align-items:center;gap:8px}
+.brand .pill{
+  font-size:12px;font-weight:700;color:#fff;
+  background:var(--accent);padding:4px 10px;border-radius:999px;
+}
+.nav-links{display:flex;gap:2px;list-style:none;flex-wrap:wrap}
+.nav-links a{
+  padding:8px 12px;font-size:13px;color:var(--mute);
+  border-radius:999px;font-weight:500;transition:background .15s,color .15s,box-shadow .15s;
+}
+.nav-links a:hover,.nav-links a.is-on{
+  background:#fff;color:var(--ink);box-shadow:var(--soft-shadow);
+}
+
+.sec{padding:2.85rem 0 3.25rem}
+.sec-head{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap;
+}
+.sec-head h2{
+  font-size:clamp(1.5rem,2.6vw,1.95rem);
+  font-weight:800;letter-spacing:-.45px;
+}
+.sec-head p{font-size:14px;color:var(--mute);max-width:48ch}
+
+.case{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--soft-shadow);
+  padding:1.55rem 1.6rem 1.55rem;
+  display:grid;
+  grid-template-columns:10px 1fr;
+  gap:1.15rem;
+  margin-bottom:14px;
+  position:relative;
+  overflow:hidden;
+}
+.case::after{
+  content:"";
+  position:absolute;right:-48px;top:-60px;width:220px;height:220px;
+  border-radius:45% 55% 50% 50%;
+  background:radial-gradient(circle at 35% 35%, rgba(240,200,212,.5), rgba(212,204,240,.22) 58%, transparent 72%);
+  pointer-events:none;
+}
+.case .bar{
+  border-radius:999px;min-height:100%;
+  background:linear-gradient(180deg,var(--mint),var(--lav));
+}
+.case-body{position:relative;z-index:1;min-width:0}
+.case-top{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  margin-bottom:.55rem;
+}
+.case-role{
+  font-size:12px;font-weight:700;color:#fff;
+  background:var(--mint-ink);padding:4px 11px;border-radius:999px;
+}
+.case-when{font-size:12px;font-weight:600;color:var(--mute)}
+.case h3{
+  font-size:clamp(1.25rem,2.4vw,1.55rem);
+  font-weight:800;letter-spacing:-.4px;line-height:1.3;
+  margin-bottom:.15rem;
+}
+.case .co{font-size:14px;color:var(--mute);margin-bottom:.85rem;font-weight:500}
+.case .bg{
+  font-size:14px;color:var(--mute);max-width:68ch;
+  margin-bottom:1.15rem;line-height:1.65;
+}
+
+/* Demo stage — GIF */
+.demo{
+  position:relative;
+  border-radius:20px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:#0B1020 url("dyson-poster.png") center / cover no-repeat;
+  margin-bottom:1.15rem;
+  box-shadow:0 18px 40px -24px rgba(20,22,40,.55);
+}
+.demo img.preview{
+  width:100%;
+  height:auto;
+  aspect-ratio:16 / 9;
+  object-fit:cover;
+  object-position:center;
+  background:#0B1020;
+}
+.demo-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:10px 14px;
+  background:rgba(255,255,255,.96);
+  border-top:1px solid var(--line);
+}
+.demo-bar .hint{
+  font-size:13px;font-weight:600;color:var(--mute);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.demo-bar .hint i{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--mint-ink);
+  box-shadow:0 0 0 3px rgba(42,107,86,.18);
+  display:inline-block;
+}
+.demo-bar .chip{
+  font-size:12px;font-weight:700;
+  padding:5px 11px;border-radius:999px;
+  background:rgba(212,204,240,.55);
+  color:var(--lav-ink);
+}
+.demo-bar a.open{
+  font-size:13px;font-weight:700;
+  color:var(--lav-ink);
+  padding:6px 12px;border-radius:999px;
+  background:#fff;
+  border:1px solid var(--line);
+  transition:background .15s,box-shadow .15s;
+}
+.demo-bar a.open:hover{
+  background:var(--bg-2);
+  box-shadow:var(--soft-shadow);
+}
+
+/* Background card */
+.bg-card{
+  display:grid;
+  grid-template-columns:1.35fr .9fr;
+  gap:10px;
+  margin-bottom:1.15rem;
+}
+.bg-main,.bg-side{
+  border-radius:var(--radius-sm);
+  border:1px solid var(--line);
+  padding:1.05rem 1.15rem;
+}
+.bg-main{
+  background:linear-gradient(165deg,#FBF9FF,var(--bg-2));
+}
+.bg-side{
+  background:linear-gradient(165deg,#E8F7F1,var(--mint));
+}
+.bg-main h4,.bg-side h4{
+  font-size:14px;font-weight:700;margin-bottom:.45rem;letter-spacing:-.15px;
+}
+.bg-main p,.bg-side p{font-size:14px;color:var(--mute);line-height:1.65}
+.bg-side .time{
+  margin-top:.7rem;
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:700;color:var(--mint-ink);
+  background:rgba(255,255,255,.7);
+  padding:5px 11px;border-radius:999px;
+}
+.prompt-box{
+  margin-top:12px;padding:14px 16px;border-radius:16px;
+  background:rgba(20,22,28,.06);border:1px dashed rgba(79,63,138,.35);
+  font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;
+  color:var(--ink);max-height:220px;overflow:auto;
+}
+.prompt-note{margin-top:10px;font-size:12px;color:var(--mute)}
+.prompt-slot{
+  margin-top:.75rem;
+  font-size:13px;color:var(--mute);
+  padding:.7rem .9rem;
+  border-radius:14px;
+  border:1px dashed rgba(79,63,138,.28);
+  background:rgba(255,255,255,.55);
+}
+
+/* Capability metrics */
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:.35rem;
+}
+.metric{
+  border-radius:var(--radius-sm);
+  border:1px solid var(--line);
+  padding:1rem 1.05rem .95rem;
+  min-height:110px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:0 8px 22px -16px rgba(28,31,38,.22);
+}
+.metric.pink{background:linear-gradient(165deg,#FBE8EE,var(--pink))}
+.metric.mint{background:linear-gradient(165deg,#E8F7F1,var(--mint))}
+.metric.lav{background:linear-gradient(165deg,#EEEAF8,var(--lav))}
+.metric .k{font-size:12px;font-weight:600;color:var(--mute)}
+.metric .v{font-size:clamp(1.05rem,1.8vw,1.25rem);font-weight:800;letter-spacing:-.4px;line-height:1.25;margin-top:.35rem}
+.metric.pink .v{color:var(--pink-ink)}
+.metric.mint .v{color:var(--mint-ink)}
+.metric.lav .v{color:var(--lav-ink)}
+.metric .s{font-size:13px;color:var(--mute);margin-top:.4rem;font-weight:500;line-height:1.45}
+
+.footnote{
+  margin-top:1.1rem;
+  font-size:13px;color:var(--mute);
+  padding:.75rem 1rem;
+  border-radius:var(--radius-sm);
+  border:1px dashed rgba(79,63,138,.22);
+  background:rgba(255,255,255,.45);
+}
+
+footer{padding:1.5rem 0 3.5rem}
+footer .box{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:1.35rem 1.5rem;
+  box-shadow:var(--soft-shadow);
+}
+footer .meta{font-size:13px;color:var(--mute)}
+
+@media (max-width:960px){
+  .bg-card{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+@media (max-width:520px){
+  .wrap{width:min(100% - 1.5rem, 1120px)}
+  .sec{padding:2rem 0 2.5rem}
+  .case{padding:1.25rem}
+  .demo-bar{padding:10px 12px}
+}
+</style>
+</head>
+<body>
+<div class="draft-banner" aria-hidden="true">文案草案 · 未过说人话</div>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#case">盖之怿<span class="pill">AI PM</span></a>
+    <ul class="nav-links">
+      <li><a href="#">首页</a></li>
+      <li><a class="is-on" href="#case">产品</a></li>
+      <li><a href="#">Skills</a></li>
+      <li><a href="#">文章</a></li>
+      <li><a href="#">经历</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <section class="sec" id="case">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>产品</h2>
+        <p>戴森球运作监控 · 前端实验 demo · 浅色 Bento 软版</p>
+      </div>
+
+      <article class="case" aria-label="戴森球运作监控">
+        <div class="bar" aria-hidden="true"></div>
+        <div class="case-body">
+          <div class="case-top">
+            <span class="case-role">前端实验 · Demo</span>
+            <span class="case-when">2025.11 · 同 prompt 跨模型对比</span>
+          </div>
+          <h3>戴森球运作监控</h3>
+          <p class="co">Three.js 3D 球体 + 科幻监控台 UI · 站内可直接看交互预览</p>
+          <p class="bg">2025 年 11 月 Gemini 新模型上线，外网热议其前端代码能力。我用<strong>同一段提示词</strong>，对比同期多家大模型对本项目的前端呈现；下面动图是最终采用的交互预览，站内可直接体验，不必点仓库。</p>
+
+          <div class="demo" aria-label="戴森球交互预览动图">
+            <img
+              class="preview"
+              src="dyson-preview.gif"
+              alt="戴森球运作监控前端交互预览：自动旋转、拖拽与缩放"
+              width="1280"
+              height="720"
+            />
+            <div class="demo-bar">
+              <span class="hint"><i></i>站内预览 · 拖拽旋转 / 滚轮缩放 / 自动旋转</span>
+              <span class="chip">源码 · 本目录</span>
+              <a class="open" href="dyson-sphere-dashboard.html" target="_blank" rel="noopener">打开完整 HTML</a>
+            </div>
+          </div>
+
+          <div class="bg-card">
+            <div class="bg-main">
+              <h4>实验背景</h4>
+              <p>不是业务上线产品，而是一次前端能力对照：固定同一段提示词，分别交给同期不同家的大模型生成戴森球运作监控页，再比较交互与视觉完成度。</p>
+              <p>最终评估：Gemini 的整体前端代码实现在当时确属<strong>第一梯队</strong>；本页展示的即为该路线留下的可交互 Three.js 监控台。</p>
+              <p class="prompt-slot">以下为按成品页<strong>反推复原</strong>的提示词（原对话未找回，非历史原文）。</p>
+              <pre class="prompt-box" id="prompt-box">请用单个 HTML 文件做一个「戴森球运作监控系统」前端页面，可直接在浏览器打开。
+
+视觉与场景：全屏深空黑底、赛博朋克霓虹；Three.js 中心恒星轻微脉动，外层半透明线框戴森球壳，3 条不同轴向彩色粒子环自转；星空+雾效+Bloom；OrbitControls 拖拽/滚轮，并自动环绕。
+
+界面 HUD（中英双语）：顶栏 DYSON SPHERE + OPERATIONAL/运作中；左侧指标（光度、捕获率、输出、完整性、旋转）；日志滚动；底部能量存储进度条；开场初始化遮罩后淡出；UI 不阻挡 3D 交互。
+
+技术：单文件内联；Three.js 与 OrbitControls、EffectComposer/UnrealBloomPass 走 CDN；数值与日志定时模拟；自适应窗口；无后端。直接输出完整可运行 HTML。</pre>
+              <p class="prompt-note">完整版见 <a href="prompt-reconstructed.md"><code>prompt-reconstructed.md</code></a> · 反推复原，非历史原文 · 定稿前仍待说人话</p>
+            </div>
+            <div class="bg-side">
+              <h4>时间锚点</h4>
+              <p>对照发生在 2025 年 11 月 Gemini 新模型上线窗口；本地仓发版集中在 2025-11-20。旧 GitHub Pages 已 404，示例不挂死链。</p>
+              <span class="time">对照 · 2025.11</span>
+            </div>
+          </div>
+
+          <div class="metrics" aria-label="能力要点">
+            <div class="metric lav">
+              <div class="k">能力</div>
+              <div class="v">3D 可视化</div>
+              <div class="s">Three.js 球体结构，可旋转观察</div>
+            </div>
+            <div class="metric mint">
+              <div class="k">能力</div>
+              <div class="v">实时指标 UI</div>
+              <div class="s">侧栏监控读数与科幻面板</div>
+            </div>
+            <div class="metric pink">
+              <div class="k">能力</div>
+              <div class="v">可交互</div>
+              <div class="s">拖拽 / 滚轮 / 自动旋转</div>
+            </div>
+          </div>
+
+          <p class="footnote">产品栏条目：有演示、有叙事的自研实验。演示、动图、海报和反推提示词都在本目录。</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="box">
+      <p class="meta">设计示例页 · 不改正式主稿 index.html · 浅色 Bento 软版 · 动图与海报在本目录</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
