@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戴森球运作监控系统 | Dyson Sphere Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+            color: #0ff;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UI 界面层 */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none; /* 让鼠标事件穿透UI层，从而控制3D场景 */
+            background: radial-gradient(circle at center, transparent 60%, rgba(0, 20, 40, 0.8) 100%);
+        }
+
+        .panel {
+            position: absolute;
+            background: rgba(0, 10, 20, 0.7);
+            border: 1px solid #0ff;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+        }
+
+        /* 顶部标题 */
+        .header {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            border-bottom: 2px solid #0ff;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px #0ff;
+        }
+        .status {
+            font-size: 12px;
+            color: #0f0;
+        }
+
+        /* 左侧数据面板 */
+        .data-panel {
+            top: 100px;
+            left: 20px;
+            width: 250px;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed rgba(0, 255, 255, 0.3);
+            padding-bottom: 5px;
+        }
+        .data-label { color: #aaa; font-size: 12px; }
+        .data-value { color: #fff; font-weight: bold; }
+
+        /* 右侧控制面板模拟 */
+        .control-panel {
+            top: 100px;
+            right: 20px;
+            width: 200px;
+        }
+        .log-entry {
+            font-size: 10px;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+        .blink {
+            animation: blinker 1.5s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        /* 底部进度条 */
+        .footer {
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #111;
+            border: 1px solid #333;
+            margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #0088ff);
+            width: 0%;
+            transition: width 0.5s;
+            box-shadow: 0 0 10px #0ff;
+        }
+
+        /* 加载遮罩 */
+        #loader {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: #000;
+            color: #0ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99;
+            font-size: 20px;
+            transition: opacity 1s;
+        }
+    </style>
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 引入 OrbitControls 用于鼠标交互 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- 引入 Post Processing (辉光效果) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+</head>
+<body>
+
+    <!-- 加载界面 -->
+    <div id="loader">系统初始化中... / INITIALIZING SYSTEM...</div>
+
+    <!-- 3D 画布 -->
+    <div id="canvas-container"></div>
+
+    <!-- UI 界面 -->
+    <div id="ui-layer">
+        <div class="panel header">
+            <h1>DYSON SPHERE</h1>
+            <div class="status"><span class="blink">●</span> OPERATIONAL / 运作中</div>
+        </div>
+
+        <div class="panel data-panel">
+            <h3>系统指标 / METRICS</h3>
+            <div class="data-row">
+                <span class="data-label">恒星光度 / Luminosity</span>
+                <span class="data-value" id="val-lum">3.828 x 10²⁶ W</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">能量捕获率 / Capture Rate</span>
+                <span class="data-value" id="val-eff">98.4%</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">当前输出 / Output</span>
+                <span class="data-value" id="val-out">LOADING...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">结构完整性 / Integrity</span>
+                <span class="data-value" style="color:#0f0">100%</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">框架旋转 / Rotation</span>
+                <span class="data-value">0.05 RPM</span>
+            </div>
+        </div>
+
+        <div class="panel control-panel">
+            <h3>日志 / LOGS</h3>
+            <div id="log-container">
+                <div class="log-entry">> 连接主节点 Alpha...</div>
+                <div class="log-entry">> 等离子流稳定</div>
+                <div class="log-entry">> 蜂群同步完成</div>
+            </div>
+        </div>
+
+        <div class="panel footer">
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa;">
+                <span>能量存储 / ENERGY STORAGE</span>
+                <span id="storage-val">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="energy-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 等待页面加载
+        window.addEventListener('load', init);
+
+        let scene, camera, renderer, controls, composer;
+        let sun, sphereFrame, rings = [], starField;
+        
+        // UI 元素
+        const uiOutput = document.getElementById('val-out');
+        const uiBar = document.getElementById('energy-bar');
+        const uiStorage = document.getElementById('storage-val');
+        const logContainer = document.getElementById('log-container');
+
+        function init() {
+            // 1. 场景设置
+            scene = new THREE.Scene();
+            // 添加环境雾，增加深空感
+            scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+            // 2. 相机设置
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(40, 20, 60);
+
+            // 3. 渲染器设置
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // 4. 轨道控制
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+
+            // --- 创建物体 ---
+
+            // A. 恒星 (The Sun)
+            const sunGeometry = new THREE.SphereGeometry(10, 64, 64);
+            const sunMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffaa00,
+            });
+            sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            scene.add(sun);
+
+            // 恒星光照 (PointLight)
+            const sunLight = new THREE.PointLight(0xffaa00, 1.5, 500);
+            scene.add(sunLight);
+
+            // B. 戴森球外框架 (Wireframe Shell)
+            const frameGeo = new THREE.IcosahedronGeometry(22, 2); // 半径22，细分2
+            const frameMat = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.15
+            });
+            sphereFrame = new THREE.Mesh(frameGeo, frameMat);
+            scene.add(sphereFrame);
+
+            // C. 戴森环/蜂群 (Rotating Rings)
+            // 创建3个不同轴向的粒子环
+            createRing(16, 0x0088ff, 0.002, {x:1, y:0.2, z:0});
+            createRing(18, 0x00ffff, -0.003, {x:0, y:1, z:0.2});
+            createRing(14, 0xff8800, 0.005, {x:0.5, y:0, z:1});
+
+            // D. 背景星空 (Starfield)
+            createStarField();
+
+            // --- 后处理 (辉光效果 Bloom) ---
+            const renderScene = new THREE.RenderPass(scene, camera);
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.2; // 阈值
+            bloomPass.strength = 2.0;  // 强度
+            bloomPass.radius = 0.5;    // 半径
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // 移除加载遮罩
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = 0;
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
+            }, 1000);
+
+            // 开始动画循环
+            animate();
+            // 开始模拟数据更新
+            setInterval(updateData, 100);
+            setInterval(addLog, 3000);
+        }
+
+        // 创建粒子环函数
+        function createRing(radius, color, speed, axis) {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const particleCount = 800;
+
+            for (let i = 0; i < particleCount; i++) {
+                // 在圆环带上随机分布
+                const theta = (i / particleCount) * Math.PI * 2;
+                const randomOffset = (Math.random() - 0.5) * 2; // 环的宽度
+                
+                // 基础圆环坐标
+                let x = (radius + randomOffset) * Math.cos(theta);
+                let y = (randomOffset * 0.5); // 稍微有一些厚度
+                let z = (radius + randomOffset) * Math.sin(theta);
+                
+                vertices.push(x, y, z);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: color,
+                size: 0.3,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const ring = new THREE.Points(geometry, material);
+            
+            // 旋转环使其朝向不同方向
+            ring.rotation.x = axis.x * Math.PI;
+            ring.rotation.y = axis.y * Math.PI;
+            ring.rotation.z = axis.z * Math.PI;
+            
+            // 自定义属性存储旋转速度
+            ring.userData = { speed: speed, axis: axis };
+
+            scene.add(ring);
+            rings.push(ring);
+        }
+
+        // 创建星空背景
+        function createStarField() {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            for (let i = 0; i < 3000; i++) {
+                vertices.push(
+                    THREE.MathUtils.randFloatSpread(1000),
+                    THREE.MathUtils.randFloatSpread(1000),
+                    THREE.MathUtils.randFloatSpread(1000)
+                );
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const material = new THREE.PointsMaterial({ color: 0x888888, size: 0.7 });
+            starField = new THREE.Points(geometry, material);
+            scene.add(starField);
+        }
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. 恒星脉动
+            const time = Date.now() * 0.001;
+            const scale = 1 + Math.sin(time * 2) * 0.02;
+            sun.scale.set(scale, scale, scale);
+
+            // 2. 框架旋转
+            sphereFrame.rotation.y += 0.001;
+            sphereFrame.rotation.z += 0.0005;
+
+            // 3. 环旋转
+            rings.forEach(ring => {
+                ring.rotation.z += ring.userData.speed; // 简单自转
+                // 也可以添加稍微复杂的轴向摆动
+            });
+
+            controls.update();
+            
+            // 使用 composer 替代 renderer 进行渲染以获得发光效果
+            composer.render();
+        }
+
+        // 窗口大小改变处理
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 模拟数据更新
+        let energyLevel = 0;
+        function updateData() {
+            // 随机能量数值
+            const baseOutput = 382; // Petawatts
+            const fluctuation = (Math.random() - 0.5) * 5;
+            const currentOutput = (baseOutput + fluctuation).toFixed(2);
+            
+            uiOutput.innerHTML = currentOutput + " PW";
+            uiOutput.style.color = fluctuation > 0 ? '#0ff' : '#00aaff';
+
+            // 能量条增长
+            if(energyLevel < 100) {
+                energyLevel += 0.1;
+            } else {
+                energyLevel = 0; // 循环模拟
+            }
+            uiBar.style.width = energyLevel + "%";
+            uiStorage.innerText = Math.floor(energyLevel) + "%";
+        }
+
+        // 模拟日志更新
+        const logMessages = [
+            "扇区 A-7 能量传输率 99%",
+            "检测到小型太阳耀斑，护盾已激活",
+            "结构完整性校验通过",
+            "正在冷却核心传输管道...",
+            "接收到来自地球的信号",
+            "第 4 轨道蜂群重新校准中"
+        ];
+
+        function addLog() {
+            const msg = logMessages[Math.floor(Math.random() * logMessages.length)];
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.innerText = `> [${new Date().toLocaleTimeString()}] ${msg}`;
+            logContainer.prepend(div);
+            if(logContainer.children.length > 6) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+    </script>
+</body>
+</html>

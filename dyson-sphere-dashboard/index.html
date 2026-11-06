@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戴森球运作监控系统 | Dyson Sphere Dashboard</title>
+    <meta http-equiv="refresh" content="0; url=dyson-sphere-dashboard.html">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #0ff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .loading {
+            font-size: 24px;
+            text-shadow: 0 0 10px #0ff;
+        }
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">正在加载戴森球监控系统</div>
+    <p>如果页面没有自动跳转，<a href="dyson-sphere-dashboard.html" style="color: #0ff;">点击这里</a></p>
+</body>
+</html>
