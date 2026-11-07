@@ -1,0 +1,17 @@
+[project]
+name = "resume-hunter"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    # 核心链路（bootstrap.sh 安装的就是这三个）
+    "pdfplumber>=0.11.9",
+    "python-docx>=1.2.0",
+    "pyyaml>=6.0.3",
+]
+
+[project.optional-dependencies]
+# 二期：Boss/脉脉 浏览器自动化（当前主流程不用）
+browser = ["playwright>=1.58.0"]
+# 分析脚本（scripts/analyze.py 等）
+analysis = ["openpyxl>=3.1.5"]

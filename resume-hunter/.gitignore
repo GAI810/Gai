@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# 本地数据（候选人隐私 / 登录态 / 日志 / 配置）
+data/
+archive/
+*.log
+
+# 真实配置只留在本机；仓库里只保留 config.example.yaml
+config.yaml
+config.local.yaml
+deploy/app_config.json

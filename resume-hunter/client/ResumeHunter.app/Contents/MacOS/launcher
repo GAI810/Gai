@@ -1,0 +1,152 @@
+#!/bin/bash
+# 简历一键入库 · 客户端启动器
+# 双击运行：从服务器下载最新安装包 → 装到 ~/Library/Application Support/ResumeHunter → 启动后台服务
+# 再次运行：检查更新（版本号变化才重装）
+
+set -u
+
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+CFG="$HERE/Resources/base_url.txt"
+DEFAULT_URL="http://YOUR-SERVER/resume-hunter"
+if [ -f "$CFG" ]; then DEFAULT_URL=$(cat "$CFG"); fi
+BASE_URL="${RESUME_BASE_URL:-$DEFAULT_URL}"
+APP_HOME="${RESUME_HOME:-$HOME/Library/Application Support/ResumeHunter}"
+APP_DIR="$APP_HOME/app"
+LOG_DIR="$APP_HOME/logs"
+mkdir -p "$LOG_DIR"
+
+log() { echo "$(date '+%H:%M:%S') $*" >> "$LOG_DIR/launcher.log"; }
+
+say() {  # 弹窗（无按钮时自动消失）
+    osascript -e "display dialog \"$1\" buttons {\"好的\"} default button 1 with title \"简历一键入库\" giving up after 15" >/dev/null 2>&1
+}
+
+fail() {
+    log "FAIL: $*"
+    osascript -e "display dialog \"$*\" buttons {\"关闭\"} with title \"简历一键入库\" with icon caution" >/dev/null 2>&1
+    exit 1
+}
+
+# 1. 取版本清单（优先用 App 内置的离线包）
+OFFLINE_DIR="$HERE/Resources/offline"
+OFFLINE_PKG=""
+if [ -f "$OFFLINE_DIR/latest.json" ]; then
+    log "离线模式：使用 App 内置安装包"
+    LATEST=$(cat "$OFFLINE_DIR/latest.json")
+else
+    log "开始：$BASE_URL"
+    LATEST=$(curl -fsSL --max-time 20 "$BASE_URL/latest.json" 2>/dev/null) || fail "无法连接更新服务器：$BASE_URL"
+fi
+VERSION=$(printf '%s' "$LATEST" | /usr/bin/python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("version",""))' 2>/dev/null)
+URL=$(printf '%s' "$LATEST" | /usr/bin/python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("url",""))' 2>/dev/null)
+SHA=$(printf '%s' "$LATEST" | /usr/bin/python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("sha256",""))' 2>/dev/null)
+[ -n "${VERSION}" ] && [ -n "$URL" ] || fail "版本清单格式不正确"
+
+# 离线包：按 latest.json 里的包名精确匹配
+if [ -d "$OFFLINE_DIR" ]; then
+    OFFLINE_PKG="$OFFLINE_DIR/$(basename "$URL")"
+    [ -f "$OFFLINE_PKG" ] || OFFLINE_PKG=$(ls "$OFFLINE_DIR"/*.zip 2>/dev/null | head -1)
+fi
+
+# 只接受 https（本机测试地址除外；离线模式不校验）
+[ -n "$OFFLINE_PKG" ] || case "$URL" in
+    https://*) ;;
+    http://127.0.0.1:*|http://localhost:*|http://127.0.0.1/*|http://localhost/*) log "⚠ 使用本机测试地址" ;;
+    *) fail "安装包地址必须是 https：$URL" ;;
+esac
+
+INSTALLED=""
+[ -f "$APP_DIR/VERSION" ] && INSTALLED=$(cat "$APP_DIR/VERSION")
+
+if [ "$INSTALLED" = "${VERSION}" ] && [ -x "$APP_DIR/.venv/bin/python" ]; then
+    log "已是 ${VERSION}，跳过下载"
+    # 只保证服务在跑
+    for svc in resume-import resume-mail resume-status resume-menubar resume-bot; do
+        launchctl kickstart -k "gui/$(id -u)/com.example.$svc" >/dev/null 2>&1 || true
+    done
+    say "已是最新版本（${VERSION}），服务已确保运行中。\n\n两条入库通道：\n· 本地：Boss/猎聘下载到监听目录\n· 邮箱：Boss 绑定飞书邮箱后自动扫信\n仅在会话内预览附件不会入库。"
+    exit 0
+fi
+
+# 2. 下载并解压
+TMP=$(mktemp -d /tmp/resume-install.XXXXXX)
+trap 'rm -rf "$TMP"' EXIT
+if [ -n "$OFFLINE_PKG" ]; then
+    log "使用内置安装包: $(basename "$OFFLINE_PKG")"
+    cp "$OFFLINE_PKG" "$TMP/pkg.zip" || fail "内置安装包读取失败"
+else
+    log "下载 $URL"
+    curl -fsSL --max-time 300 "$URL" -o "$TMP/pkg.zip" || fail "下载安装包失败，请检查网络"
+fi
+if [ -n "${SHA}" ]; then
+    ACTUAL=$(shasum -a 256 "$TMP/pkg.zip" | awk '{print $1}')
+    if [ "$ACTUAL" != "${SHA}" ]; then
+        fail "安装包校验失败（可能被篡改或下载不完整），已中止安装"
+    fi
+    log "校验通过 ($SHA)"
+else
+    fail "版本清单缺少 sha256，拒绝安装（请让维护者重新发布）"
+fi
+unzip -q "$TMP/pkg.zip" -d "$TMP/pkg" || fail "解压失败"
+
+# 兼容压缩包里多一层目录的情况
+SRC="$TMP/pkg"
+if [ ! -f "$SRC/scripts/bootstrap.sh" ]; then
+    SRC=$(find "$TMP/pkg" -maxdepth 2 -name bootstrap.sh -type f 2>/dev/null | head -1 | xargs dirname 2>/dev/null | xargs dirname 2>/dev/null)
+fi
+[ -f "$SRC/scripts/bootstrap.sh" ] || fail "安装包内容不完整"
+
+# 3. 先装到临时目录，成功后再切换（失败不影响现有安装）
+mkdir -p "$APP_HOME"
+STAGE="$APP_HOME/.staging.$$"
+rm -rf "$STAGE"
+mkdir -p "$STAGE"
+rsync -a --exclude 'data' --exclude 'archive' --exclude '.venv' "$SRC/" "$STAGE/" 2>/dev/null || {
+    cp -R "$SRC/scripts" "$STAGE/" 2>/dev/null
+    cp "$SRC"/*.md "$STAGE/" 2>/dev/null
+}
+[ -f "$STAGE/scripts/bootstrap.sh" ] || fail "安装包内容不完整"
+
+# 4. 安装环境 + 服务（在 staging 里完成，成功后再替换）
+log "运行 bootstrap"
+RESUME_NO_SERVICE=1 bash "$STAGE/scripts/bootstrap.sh" >> "$LOG_DIR/install.log" 2>&1
+BOOT=$?
+if [ $BOOT -ne 0 ]; then
+    rm -rf "$STAGE"
+    fail "安装失败，详见 $LOG_DIR/install.log（旧版本未受影响）"
+fi
+
+# 切换：备份旧代码，用新目录替换（保留 data/）
+if [ -d "$APP_DIR" ]; then
+    for item in scripts lib deploy SKILL.md INSTALL.md AI_INSTALL.md DEPLOY.md pyproject.toml; do
+        [ -e "$APP_DIR/$item" ] && mv "$APP_DIR/$item" "$APP_DIR/.backup.$$/$item" 2>/dev/null
+    done
+fi
+mkdir -p "$APP_DIR"
+rsync -a "$STAGE/" "$APP_DIR/" 2>/dev/null
+printf '%s' "${VERSION}" > "$APP_DIR/VERSION"
+rm -rf "$STAGE"
+log "已切换到 ${VERSION}"
+
+# 5. 确保悬浮窗产物可用（优先 App Resources，其次安装包内 dist/）
+if [ -d "$HERE/Resources/ResumeStatus.app" ]; then
+    mkdir -p "$APP_DIR/dist"
+    rm -rf "$APP_DIR/dist/ResumeStatus.app"
+    cp -R "$HERE/Resources/ResumeStatus.app" "$APP_DIR/dist/"
+    log "已从 Resources 拷入 ResumeStatus.app"
+fi
+if [ ! -d "$APP_DIR/dist/ResumeStatus.app" ]; then
+    fail "安装包缺少 ResumeStatus.app（悬浮窗）。请使用包含编译产物的离线包，或先在 macOS 运行 build_menubar.sh"
+fi
+
+# 6. 在正式目录安装后台服务（staging 阶段跳过了服务安装）
+log "安装后台服务"
+bash "$APP_DIR/scripts/setup_colleague.sh" < /dev/null >> "$LOG_DIR/install.log" 2>&1 || \
+    log "⚠ 服务安装失败，可手动运行: bash \"$APP_DIR/scripts/setup_colleague.sh\""
+for svc in resume-import resume-mail resume-status resume-menubar; do
+    launchctl kickstart -k "gui/$(id -u)/com.example.$svc" >/dev/null 2>&1 || true
+done
+
+log "安装完成 ${VERSION}"
+say "✅ 安装完成（${VERSION}）\n\n两条入库通道：\n1) 本地监听：Boss/猎聘下载简历到监听目录\n2) 邮箱：Boss 绑定飞书邮箱后自动扫信入库\n注意：仅在 Boss 会话内预览附件、未下载也未转邮箱 → 不会入库。\n\n查看记录：招聘简历/查看入库记录.command"
+exit 0

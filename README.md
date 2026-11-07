@@ -17,3 +17,14 @@ GitHub：[https://github.com/GAI810/Gai](https://github.com/GAI810/Gai) · 邮�
 - 提示词：[`prompt-reconstructed.md`](dyson-sphere-dashboard/prompt-reconstructed.md)
 
 这份提示词是**反推复原，不是历史原文**。当时的对话没找回来，文中内容是按成品页倒推的，只用来在作品集里说明当时在问什么。
+
+## 天下无鸽入库助手
+
+招聘入库工具的公开源码在 [`resume-hunter/`](resume-hunter/)。作品集里叫「天下无鸽入库助手」，目录名沿用本地产品名 resume-hunter。
+
+这是一份脱敏快照。仓库里没有本地 `data/`（候选人、登录态、日志），没有 `.venv`，没有真实飞书租户，也没有密钥。配置只保留 [`config.example.yaml`](resume-hunter/config.example.yaml)，要跑的话在自己机器上填。
+
+它做的事，按快照里的说明，是把招聘平台收到的简历整理进飞书招聘：邮箱或本地下载目录进来，能判断岗位的就建投递，判断不了的进待分配。这里不写效果数字。
+
+- 说明：[`resume-hunter/README.md`](resume-hunter/README.md)
+- 安装：[`resume-hunter/INSTALL.md`](resume-hunter/INSTALL.md)
