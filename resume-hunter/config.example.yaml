@@ -1,0 +1,6 @@
+# Example config — fill locally, never commit secrets
+llm:
+  api_key: YOUR_KEY
+feishu:
+  app_id: YOUR_APP_ID
+  app_secret: YOUR_APP_SECRET
